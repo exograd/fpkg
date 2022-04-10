@@ -13,7 +13,12 @@ func cmdGenerate(p *program.Program) {
 	}
 
 	configPath := p.OptionValue("config")
+	var config GenerationConfig
+	if err := config.LoadFile(configPath); err != nil {
+		p.Fatal("cannot load configuration file: %v", err)
+	}
+
+	fmt.Printf("config: %#v\n", config)
 
 	fmt.Printf("dirPath: %q\n", dirPath)
-	fmt.Printf("configPath: %q\n", configPath)
 }
