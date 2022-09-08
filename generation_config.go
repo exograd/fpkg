@@ -44,12 +44,12 @@ type GenerationConfigDependency struct {
 
 type GenerationConfigUser struct {
 	Name string `yaml:"name"`
-	UID  uint   `yaml:uid"`
+	UID  uint   `yaml:"uid"`
 }
 
 type GenerationConfigGroup struct {
 	Name string `yaml:"name"`
-	GID  uint   `yaml:gid"`
+	GID  uint   `yaml:"gid"`
 }
 
 func DefaultGenerationConfig() *GenerationConfig {
