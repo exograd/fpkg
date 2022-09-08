@@ -30,8 +30,8 @@ import (
 type Manifest struct {
 	Name        string              `json:"name"`
 	Version     string              `json:"version"`
-	Comment     string              `json:"comment,omitempty"`
-	Desc        string              `json:"desc,omitempty"`
+	Comment     string              `json:"comment"`
+	Desc        string              `json:"desc"`
 	Origin      string              `json:"origin"`
 	WWW         string              `json:"www,omitempty"`
 	Maintainer  string              `json:"maintainer,omitempty"`

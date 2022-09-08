@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strconv"
 	"time"
+	"unicode"
 
 	"github.com/exograd/go-program"
 )
@@ -87,6 +88,14 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 	m.WWW = config.WebsiteURI
 	m.Maintainer = config.Maintainer
 	m.Arch = config.Architecture
+
+	if longDesc := config.LongDescription; longDesc != "" {
+		m.Desc = longDesc
+	} else {
+		desc := []rune(m.Comment)
+		desc[0] = unicode.ToUpper(desc[0])
+		m.Desc = string(desc) + "."
+	}
 
 	if origin := config.Origin; origin != "" {
 		m.Origin = origin

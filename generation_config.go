@@ -60,19 +60,23 @@ func DefaultGenerationConfig() *GenerationConfig {
 	}
 }
 
-func (c *GenerationConfig) UnmarshalYAML(value *yaml.Node) error {
+func (pc *GenerationConfig) UnmarshalYAML(value *yaml.Node) error {
 	type GenerationConfig2 GenerationConfig
-	c2 := GenerationConfig2(*c)
+	c := GenerationConfig2(*pc)
 
-	if err := value.Decode(&c2); err != nil {
+	if err := value.Decode(&c); err != nil {
 		return err
 	}
 
-	if c2.Name == "" {
+	if c.Name == "" {
 		return fmt.Errorf("missing or empty package name")
 	}
 
-	*c = GenerationConfig(c2)
+	if c.ShortDescription == "" {
+		return fmt.Errorf("missing or empty short description")
+	}
+
+	*pc = GenerationConfig(c)
 	return nil
 }
 

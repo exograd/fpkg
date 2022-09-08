@@ -22,7 +22,7 @@ func main() {
 	var c *program.Command
 
 	p := program.NewProgram("fpkg",
-		"utils to manipulate freebsd packages")
+		"tools to manipulate freebsd packages")
 
 	c = p.AddCommand("build", "build a package", cmdBuild)
 	c.AddOptionalArgument("directory",
