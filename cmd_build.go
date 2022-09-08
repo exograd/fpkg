@@ -88,6 +88,12 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 	m.Maintainer = config.Maintainer
 	m.Arch = config.Architecture
 
+	if origin := config.Origin; origin != "" {
+		m.Origin = origin
+	} else {
+		m.Origin = "misc/" + config.Name
+	}
+
 	m.Deps = make(ManifestDeps, len(config.Dependencies))
 	for _, dep := range config.Dependencies {
 		m.Deps[dep.Name] = ManifestDep{

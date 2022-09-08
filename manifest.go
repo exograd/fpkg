@@ -32,7 +32,7 @@ type Manifest struct {
 	Version     string              `json:"version"`
 	Comment     string              `json:"comment,omitempty"`
 	Desc        string              `json:"desc,omitempty"`
-	Origin      string              `json:"origin,omitempty"`
+	Origin      string              `json:"origin"`
 	WWW         string              `json:"www,omitempty"`
 	Maintainer  string              `json:"maintainer,omitempty"`
 	Arch        string              `json:"arch,omitempty"`

@@ -29,6 +29,7 @@ type GenerationConfig struct {
 	LongDescription  string                       `yaml:"long_description,omitempty"`
 	WebsiteURI       string                       `yaml:"website_uri,omitempty"`
 	Maintainer       string                       `yaml:"maintainer,omitempty"`
+	Origin           string                       `yaml:"origin,omitempty"`
 	Architecture     string                       `yaml:"architecture,omitempty"`
 	Dependencies     []GenerationConfigDependency `yaml:"dependencies,omitempty"`
 	Users            []GenerationConfigUser       `yaml:"users,omitempty"`
