@@ -24,7 +24,7 @@ func main() {
 	p := program.NewProgram("freebsd-pkg",
 		"utils to manipulate freebsd packages")
 
-	c = p.AddCommand("generate", "generate a package", cmdGenerate)
+	c = p.AddCommand("build", "build a package", cmdBuild)
 	c.AddOptionalArgument("directory",
 		"the directory containing files to package")
 	c.AddOption("c", "config", "path", "freebsd-pkg.yaml",

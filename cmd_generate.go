@@ -21,7 +21,7 @@ import (
 	"github.com/exograd/go-program"
 )
 
-func cmdGenerate(p *program.Program) {
+func cmdBuild(p *program.Program) {
 	dirPath := p.ArgumentValue("directory")
 	if dirPath == "" {
 		dirPath = "."
