@@ -21,13 +21,13 @@ import (
 func main() {
 	var c *program.Command
 
-	p := program.NewProgram("freebsd-pkg",
+	p := program.NewProgram("fpkg",
 		"utils to manipulate freebsd packages")
 
 	c = p.AddCommand("build", "build a package", cmdBuild)
 	c.AddOptionalArgument("directory",
 		"the directory containing files to package")
-	c.AddOption("c", "config", "path", "freebsd-pkg.yaml",
+	c.AddOption("c", "config", "path", "fpkg.yaml",
 		"the path of the configuration file")
 	c.AddOption("v", "version", "string", "",
 		"set the version of the package")

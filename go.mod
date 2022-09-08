@@ -1,4 +1,4 @@
-module github.com/exograd/freebsd-pkg
+module github.com/exograd/fpkg
 
 go 1.18
 
