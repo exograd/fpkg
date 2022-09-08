@@ -33,6 +33,8 @@ type GenerationConfig struct {
 	Dependencies     []GenerationConfigDependency `yaml:"dependencies,omitempty"`
 	Users            []GenerationConfigUser       `yaml:"users,omitempty"`
 	Groups           []GenerationConfigGroup      `yaml:"groups,omitempty"`
+	FileOwner        string                       `yaml:"file_owner,omitempty"`
+	FileGroup        string                       `yaml:"file_group,omitempty"`
 }
 
 type GenerationConfigDependency struct {
@@ -48,6 +50,13 @@ type GenerationConfigUser struct {
 type GenerationConfigGroup struct {
 	Name string `yaml:"name"`
 	GID  uint   `yaml:gid"`
+}
+
+func DefaultGenerationConfig() *GenerationConfig {
+	return &GenerationConfig{
+		FileOwner: "root",
+		FileGroup: "wheel",
+	}
 }
 
 func (c *GenerationConfig) UnmarshalYAML(value *yaml.Node) error {

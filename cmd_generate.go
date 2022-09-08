@@ -15,8 +15,12 @@
 package main
 
 import (
+	"archive/tar"
+	"encoding/json"
 	"fmt"
-	"path"
+	"io"
+	"os"
+	"time"
 
 	"github.com/exograd/go-program"
 )
@@ -28,7 +32,7 @@ func cmdBuild(p *program.Program) {
 	}
 
 	configPath := p.OptionValue("config")
-	var config GenerationConfig
+	config := DefaultGenerationConfig()
 	if err := config.LoadFile(configPath); err != nil {
 		p.Fatal("cannot load configuration file from %s: %v", configPath, err)
 	}
@@ -41,16 +45,33 @@ func cmdBuild(p *program.Program) {
 		p.Fatal("missing or empty version")
 	}
 
-	if err := generateManifest(&config, dirPath); err != nil {
+	manifest, err := generateManifest(config)
+	if err != nil {
 		p.Fatal("cannot generate manifest: %v", err)
 	}
 
 	// TODO Generate +PRE_INSTALL
 
-	// TODO Create the archive
+	archivePath := manifest.PackageFilename()
+
+	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	archive, err := os.OpenFile(archivePath, flags, 0644)
+	if err != nil {
+		p.Fatal("cannot open %q: %v", archive, err)
+	}
+
+	if err := createArchive(config, manifest, archive); err != nil {
+		if removeErr := os.Remove(archivePath); removeErr != nil {
+			p.Error("cannot delete %q: %v", archivePath, removeErr)
+		}
+
+		p.Fatal("cannot create archive: %v", err)
+	}
+
+	fmt.Printf("%s\n", archivePath)
 }
 
-func generateManifest(config *GenerationConfig, dirPath string) error {
+func generateManifest(config *GenerationConfig) (*Manifest, error) {
 	var m Manifest
 
 	m.Name = config.Name
@@ -85,9 +106,64 @@ func generateManifest(config *GenerationConfig, dirPath string) error {
 
 	// TODO directories
 
-	filePath := path.Join(dirPath, "+MANIFEST")
-	if err := m.WriteFile(filePath); err != nil {
-		return fmt.Errorf("cannot write %s: %w", filePath, err)
+	return &m, nil
+}
+
+func createArchive(config *GenerationConfig, manifest *Manifest, archive io.Writer) error {
+	now := time.Now().UTC()
+
+	w := tar.NewWriter(archive)
+
+	var createErr error
+
+	addFile := func(name string, data []byte) {
+		if createErr != nil {
+			return
+		}
+
+		header := tar.Header{
+			Typeflag: tar.TypeReg,
+			Name:     name,
+			Size:     int64(len(data)),
+			Mode:     int64(0644),
+			ModTime:  now,
+		}
+
+		if owner := config.FileOwner; owner != "" {
+			header.Uname = owner
+		}
+
+		if group := config.FileGroup; group != "" {
+			header.Gname = group
+		}
+
+		if err := w.WriteHeader(&header); err != nil {
+			createErr = fmt.Errorf("cannot write header: %w", err)
+			return
+		}
+
+		if _, err := w.Write(data); err != nil {
+			createErr = fmt.Errorf("cannot write content: %w", err)
+			return
+		}
+	}
+
+	manifestData, err := json.Marshal(manifest)
+	if err != nil {
+		return fmt.Errorf("cannot encode manifest: %w", err)
+	}
+
+	addFile("+MANIFEST", manifestData)
+	// TODO +PRE_INSTALL
+
+	// TODO files and directories
+
+	if createErr != nil {
+		return createErr
+	}
+
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("cannot close archive: %w", err)
 	}
 
 	return nil

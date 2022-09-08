@@ -68,6 +68,10 @@ type ManifestDirectory struct {
 
 type ManifestDirectories map[string]ManifestDirectory
 
+func (m *Manifest) PackageFilename() string {
+	return m.Name + "-" + m.Version + ".pkg"
+}
+
 func (m *Manifest) WriteFile(filePath string) error {
 	var buf bytes.Buffer
 
