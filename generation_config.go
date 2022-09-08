@@ -27,8 +27,8 @@ type GenerationConfig struct {
 	Version          string                       `yaml:"version,omitempty"`
 	ShortDescription string                       `yaml:"short_description,omitempty"`
 	LongDescription  string                       `yaml:"long_description,omitempty"`
-	WebsiteURI       string                       `yaml:"website_uri,omitempty"`
-	Maintainer       string                       `yaml:"maintainer,omitempty"`
+	WebsiteURI       string                       `yaml:"website_uri"`
+	Maintainer       string                       `yaml:"maintainer"`
 	Origin           string                       `yaml:"origin,omitempty"`
 	Architecture     string                       `yaml:"architecture,omitempty"`
 	Dependencies     []GenerationConfigDependency `yaml:"dependencies,omitempty"`
@@ -74,6 +74,14 @@ func (pc *GenerationConfig) UnmarshalYAML(value *yaml.Node) error {
 
 	if c.ShortDescription == "" {
 		return fmt.Errorf("missing or empty short description")
+	}
+
+	if c.WebsiteURI == "" {
+		return fmt.Errorf("missing or empty website uri")
+	}
+
+	if c.Maintainer == "" {
+		return fmt.Errorf("missing or empty maintainer")
 	}
 
 	*pc = GenerationConfig(c)
