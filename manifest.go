@@ -68,6 +68,13 @@ type ManifestDirectory struct {
 
 type ManifestDirectories map[string]ManifestDirectory
 
+func NewManifest() *Manifest {
+	return &Manifest{
+		Files:       make(ManifestFiles),
+		Directories: make(ManifestDirectories),
+	}
+}
+
 func (m *Manifest) PackageFilename() string {
 	return m.Name + "-" + m.Version + ".pkg"
 }

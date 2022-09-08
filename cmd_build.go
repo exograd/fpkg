@@ -16,10 +16,16 @@ package main
 
 import (
 	"archive/tar"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
+	"io/ioutil"
 	"os"
+	"path"
+	"sort"
+	"strconv"
 	"time"
 
 	"github.com/exograd/go-program"
@@ -45,7 +51,7 @@ func cmdBuild(p *program.Program) {
 		p.Fatal("missing or empty version")
 	}
 
-	manifest, err := generateManifest(config)
+	manifest, err := generateManifest(config, dirPath)
 	if err != nil {
 		p.Fatal("cannot generate manifest: %v", err)
 	}
@@ -60,7 +66,7 @@ func cmdBuild(p *program.Program) {
 		p.Fatal("cannot open %q: %v", archive, err)
 	}
 
-	if err := createArchive(config, manifest, archive); err != nil {
+	if err := createArchive(config, dirPath, manifest, archive); err != nil {
 		if removeErr := os.Remove(archivePath); removeErr != nil {
 			p.Error("cannot delete %q: %v", archivePath, removeErr)
 		}
@@ -71,8 +77,8 @@ func cmdBuild(p *program.Program) {
 	fmt.Printf("%s\n", archivePath)
 }
 
-func generateManifest(config *GenerationConfig) (*Manifest, error) {
-	var m Manifest
+func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, error) {
+	m := NewManifest()
 
 	m.Name = config.Name
 	m.Version = config.Version
@@ -102,31 +108,63 @@ func generateManifest(config *GenerationConfig) (*Manifest, error) {
 
 	m.Prefix = "/"
 
-	// TODO files
+	err := WalkDir(dirPath, func(relPath string, info fs.FileInfo) error {
+		fullPath := path.Join(dirPath, relPath)
 
-	// TODO directories
+		if !info.Mode().IsRegular() {
+			return nil
+		}
 
-	return &m, nil
+		checksum, err := FileSHA256Checksum(fullPath)
+		if err != nil {
+			return fmt.Errorf("cannot compute checksum of %q: %w",
+				fullPath, err)
+		}
+
+		permString := strconv.FormatInt(int64(info.Mode().Perm()), 8)
+
+		if info.IsDir() {
+			m.Directories[relPath] = ManifestDirectory{
+				Uname: config.FileOwner,
+				Gname: config.FileGroup,
+				Perm:  permString,
+			}
+		} else {
+			m.Files[relPath] = ManifestFile{
+				Uname: config.FileOwner,
+				Gname: config.FileGroup,
+				Perm:  permString,
+				Sum:   hex.EncodeToString(checksum),
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
-func createArchive(config *GenerationConfig, manifest *Manifest, archive io.Writer) error {
+func createArchive(config *GenerationConfig, dirPath string, manifest *Manifest, archive io.Writer) error {
 	now := time.Now().UTC()
 
 	w := tar.NewWriter(archive)
 
-	var createErr error
-
-	addFile := func(name string, data []byte) {
-		if createErr != nil {
-			return
-		}
-
+	addFile := func(name string, mode int64, owner, group string, data []byte) error {
 		header := tar.Header{
 			Typeflag: tar.TypeReg,
 			Name:     name,
 			Size:     int64(len(data)),
-			Mode:     int64(0644),
+			Mode:     mode,
 			ModTime:  now,
+			Uname:    owner,
+			Gname:    group,
+		}
+
+		if data == nil {
+			header.Typeflag = tar.TypeDir
 		}
 
 		if owner := config.FileOwner; owner != "" {
@@ -138,14 +176,14 @@ func createArchive(config *GenerationConfig, manifest *Manifest, archive io.Writ
 		}
 
 		if err := w.WriteHeader(&header); err != nil {
-			createErr = fmt.Errorf("cannot write header: %w", err)
-			return
+			return fmt.Errorf("cannot write header: %w", err)
 		}
 
 		if _, err := w.Write(data); err != nil {
-			createErr = fmt.Errorf("cannot write content: %w", err)
-			return
+			return fmt.Errorf("cannot write data: %w", err)
 		}
+
+		return nil
 	}
 
 	manifestData, err := json.Marshal(manifest)
@@ -153,13 +191,61 @@ func createArchive(config *GenerationConfig, manifest *Manifest, archive io.Writ
 		return fmt.Errorf("cannot encode manifest: %w", err)
 	}
 
-	addFile("+MANIFEST", manifestData)
+	err = addFile("+MANIFEST", 0644, config.FileOwner, config.FileGroup,
+		manifestData)
+	if err != nil {
+		return fmt.Errorf("cannot add manifest: %w", err)
+	}
+
 	// TODO +PRE_INSTALL
 
-	// TODO files and directories
+	relPaths := make([]string, 0, len(manifest.Files))
+	for relPath := range manifest.Files {
+		relPaths = append(relPaths, relPath)
+	}
+	sort.Strings(relPaths)
 
-	if createErr != nil {
-		return createErr
+	for _, relPath := range relPaths {
+		mfile := manifest.Files[relPath]
+		filePath := path.Join(dirPath, relPath)
+
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("cannot read %q: %w", filePath, err)
+		}
+
+		perm, err := strconv.ParseInt(mfile.Perm, 8, 64)
+		if err != nil {
+			return fmt.Errorf("cannot parse permission string %q: %w",
+				mfile.Perm, err)
+		}
+
+		err = addFile(relPath, perm, mfile.Uname, mfile.Gname, data)
+		if err != nil {
+			return fmt.Errorf("cannot add %q: %w", filePath, err)
+		}
+	}
+
+	relPaths = make([]string, 0, len(manifest.Files))
+	for relPath := range manifest.Directories {
+		relPaths = append(relPaths, relPath)
+	}
+	sort.Strings(relPaths)
+
+	for _, relPath := range relPaths {
+		mdir := manifest.Directories[relPath]
+		filePath := path.Join(dirPath, relPath)
+
+		perm, err := strconv.ParseInt(mdir.Perm, 8, 64)
+		if err != nil {
+			return fmt.Errorf("cannot parse permission string %q: %w",
+				mdir.Perm, err)
+		}
+
+		err = addFile(relPath, perm, mdir.Uname, mdir.Gname, nil)
+		if err != nil {
+			return fmt.Errorf("cannot add directory %q: %w", filePath, err)
+		}
 	}
 
 	if err := w.Close(); err != nil {
