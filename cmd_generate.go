@@ -33,6 +33,14 @@ func cmdGenerate(p *program.Program) {
 		p.Fatal("cannot load configuration file from %s: %v", configPath, err)
 	}
 
+	if p.IsOptionSet("version") {
+		config.Version = p.OptionValue("version")
+	}
+
+	if config.Version == "" {
+		p.Fatal("missing or empty version")
+	}
+
 	if err := generateManifest(&config, dirPath); err != nil {
 		p.Fatal("cannot generate manifest: %v", err)
 	}

@@ -29,6 +29,8 @@ func main() {
 		"the directory containing files to package")
 	c.AddOption("c", "config", "path", "freebsd-pkg.yaml",
 		"the path of the configuration file")
+	c.AddOption("v", "version", "string", "",
+		"set the version of the package")
 
 	p.ParseCommandLine()
 	p.Run()
