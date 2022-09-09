@@ -44,8 +44,9 @@ type GenerationConfigDependency struct {
 }
 
 type GenerationConfigUser struct {
-	Name string `yaml:"name"`
-	UID  uint   `yaml:"uid"`
+	Name  string `yaml:"name"`
+	UID   uint   `yaml:"uid"`
+	Group string `yaml:"group"`
 }
 
 type GenerationConfigGroup struct {
@@ -102,6 +103,10 @@ func (pc *GenerationConfigUser) UnmarshalYAML(value *yaml.Node) error {
 
 	if c.UID == 0 {
 		return fmt.Errorf("missing or zero uid")
+	}
+
+	if c.Group == "" {
+		return fmt.Errorf("missing or empty user group")
 	}
 
 	*pc = GenerationConfigUser(c)

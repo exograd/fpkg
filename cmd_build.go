@@ -16,6 +16,7 @@ package main
 
 import (
 	"archive/tar"
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -56,8 +57,6 @@ func cmdBuild(p *program.Program) {
 	if err != nil {
 		p.Fatal("cannot generate manifest: %v", err)
 	}
-
-	// TODO Generate +PRE_INSTALL
 
 	archivePath := manifest.PackageFilename()
 
@@ -166,6 +165,14 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 		return nil, err
 	}
 
+	// Scripts
+	preInstallData, err := generatePreInstall(config)
+	if err != nil {
+		return nil, fmt.Errorf("cannot generate pre-install script: %w", err)
+	}
+
+	m.Scripts["pre-install"] = string(preInstallData)
+
 	return m, nil
 }
 
@@ -208,6 +215,7 @@ func createArchive(config *GenerationConfig, dirPath string, manifest *Manifest,
 		return nil
 	}
 
+	// Manifest
 	manifestData, err := json.Marshal(manifest)
 	if err != nil {
 		return fmt.Errorf("cannot encode manifest: %w", err)
@@ -219,8 +227,7 @@ func createArchive(config *GenerationConfig, dirPath string, manifest *Manifest,
 		return fmt.Errorf("cannot add manifest: %w", err)
 	}
 
-	// TODO +PRE_INSTALL
-
+	// Files
 	relPaths := make([]string, 0, len(manifest.Files))
 	for relPath := range manifest.Files {
 		relPaths = append(relPaths, relPath)
@@ -248,6 +255,7 @@ func createArchive(config *GenerationConfig, dirPath string, manifest *Manifest,
 		}
 	}
 
+	// Directories
 	relPaths = make([]string, 0, len(manifest.Directories))
 	for relPath := range manifest.Directories {
 		relPaths = append(relPaths, relPath)
@@ -270,9 +278,69 @@ func createArchive(config *GenerationConfig, dirPath string, manifest *Manifest,
 		}
 	}
 
+	// Finalize the archive
 	if err := w.Close(); err != nil {
 		return fmt.Errorf("cannot close archive: %w", err)
 	}
 
 	return nil
+}
+
+func generatePreInstall(config *GenerationConfig) ([]byte, error) {
+	if len(config.Groups) == 0 && len(config.Users) == 0 {
+		return nil, nil
+	}
+
+	var buf bytes.Buffer
+
+	buf.WriteString(`
+if [ -n "$PKG_ROOTDIR" ] && [ "$PKG_ROOTDIR" != "/" ]; then
+  PW="/usr/sbin/pw -R $PKG_ROOTDIR"
+else
+  PW=/usr/sbin/pw
+fi
+`)
+
+	if len(config.Groups) > 0 {
+		buf.WriteString(`
+echo "===> Creating groups."
+`)
+		for _, group := range config.Groups {
+			fmt.Fprintf(&buf, `
+if ! $PW groupshow '%s' >/dev/null 2>&1; then
+  echo "Creating group '%s' with gid %d."
+  $PW groupadd '%s' -g %d
+else
+  echo "Using existing group '%s'."
+fi
+`,
+				group.Name,
+				group.Name, group.GID,
+				group.Name, group.GID,
+				group.Name)
+		}
+	}
+
+	if len(config.Users) > 0 {
+		buf.WriteString(`
+echo "===> Creating users."
+`)
+		for _, user := range config.Users {
+			fmt.Fprintf(&buf, `
+if ! $PW usershow '%s' >/dev/null 2>&1; then
+  echo "Creating user '%s' with uid %d."
+  $PW useradd '%s' -u %d -g %s -c '%s' \
+                   -d /nonexistent -s /usr/sbin/nologin
+else
+  echo "Using existing user '%s'."
+fi
+`,
+				user.Name,
+				user.Name, user.UID,
+				user.Name, user.UID, user.Group, user.Name,
+				user.Name)
+		}
+	}
+
+	return buf.Bytes(), nil
 }

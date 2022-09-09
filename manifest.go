@@ -42,6 +42,7 @@ type Manifest struct {
 	Prefix      string              `json:"prefix,omitempty"`
 	Files       ManifestFiles       `json:"files,omitempty"`
 	Directories ManifestDirectories `json:"directories,omitempty"`
+	Scripts     map[string]string   `json:"scripts"`
 }
 
 type ManifestDep struct {
@@ -72,6 +73,7 @@ func NewManifest() *Manifest {
 	return &Manifest{
 		Files:       make(ManifestFiles),
 		Directories: make(ManifestDirectories),
+		Scripts:     make(map[string]string),
 	}
 }
 
