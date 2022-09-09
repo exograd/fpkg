@@ -1,6 +1,0 @@
-name: "fpkg"
-version: "0.1"
-short_description: "tool to manipulate freebsd packages"
-website_uri: "https://github.com/exograd/fpkg"
-maintainer: "Nicolas Martyanoff <nicolas@n16f.net>"
-
