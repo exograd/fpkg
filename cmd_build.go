@@ -129,6 +129,11 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 
 	m.Prefix = "/"
 
+	fileCfgs := make(map[string]GenerationConfigFile)
+	for _, fileCfg := range config.Files {
+		fileCfgs[fileCfg.Path] = fileCfg
+	}
+
 	err := WalkDir(dirPath, func(relPath string, info fs.FileInfo) error {
 		fullPath := path.Join(dirPath, relPath)
 
@@ -142,18 +147,39 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 				fullPath, err)
 		}
 
-		permString := strconv.FormatInt(int64(info.Mode().Perm()), 8)
+		fileCfg, hasFileCfg := fileCfgs[relPath]
+
+		var permString string
+		if hasFileCfg && fileCfg.Mode != "" {
+			permString = fileCfg.Mode
+		} else {
+			permString = strconv.FormatInt(int64(info.Mode().Perm()), 8)
+		}
+
+		var uname string
+		if hasFileCfg && fileCfg.Owner != "" {
+			uname = fileCfg.Owner
+		} else {
+			uname = config.FileOwner
+		}
+
+		var gname string
+		if hasFileCfg && fileCfg.Group != "" {
+			gname = fileCfg.Group
+		} else {
+			gname = config.FileGroup
+		}
 
 		if info.IsDir() {
 			m.Directories[relPath] = ManifestDirectory{
-				Uname: config.FileOwner,
-				Gname: config.FileGroup,
+				Uname: uname,
+				Gname: gname,
 				Perm:  permString,
 			}
 		} else {
 			m.Files[relPath] = ManifestFile{
-				Uname: config.FileOwner,
-				Gname: config.FileGroup,
+				Uname: uname,
+				Gname: gname,
 				Perm:  permString,
 				Sum:   hex.EncodeToString(checksum),
 			}

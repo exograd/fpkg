@@ -24,6 +24,9 @@ website_uri: "https://github.com/exograd/example"
 maintainer: "Nicolas Martyanoff <nicolas@n16f.net>"
 file_owner: "root"
 file_group: "wheel"
+files:
+  - path: "/var/lib/example"
+    mode: "600"
 ```
 
 You can then run fpkg:

@@ -36,6 +36,7 @@ type GenerationConfig struct {
 	Groups           []GenerationConfigGroup      `yaml:"groups,omitempty"`
 	FileOwner        string                       `yaml:"file_owner,omitempty"`
 	FileGroup        string                       `yaml:"file_group,omitempty"`
+	Files            []GenerationConfigFile       `yaml:"files,omitempty"`
 }
 
 type GenerationConfigDependency struct {
@@ -52,6 +53,13 @@ type GenerationConfigUser struct {
 type GenerationConfigGroup struct {
 	Name string `yaml:"name"`
 	GID  uint   `yaml:"gid"`
+}
+
+type GenerationConfigFile struct {
+	Path  string `yaml:"path"`
+	Mode  string `yaml:"mode,omitempty"`
+	Owner string `yaml:"owner,omitempty"`
+	Group string `yaml:"group,omitempty"`
 }
 
 func DefaultGenerationConfig() *GenerationConfig {
@@ -130,6 +138,22 @@ func (pc *GenerationConfigGroup) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	*pc = GenerationConfigGroup(c)
+	return nil
+}
+
+func (pc *GenerationConfigFile) UnmarshalYAML(value *yaml.Node) error {
+	type GenerationConfigFile2 GenerationConfigFile
+	c := GenerationConfigFile2(*pc)
+
+	if err := value.Decode(&c); err != nil {
+		return err
+	}
+
+	if c.Path == "" {
+		return fmt.Errorf("missing or empty file path")
+	}
+
+	*pc = GenerationConfigFile(c)
 	return nil
 }
 
