@@ -88,6 +88,46 @@ func (pc *GenerationConfig) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func (pc *GenerationConfigUser) UnmarshalYAML(value *yaml.Node) error {
+	type GenerationConfigUser2 GenerationConfigUser
+	c := GenerationConfigUser2(*pc)
+
+	if err := value.Decode(&c); err != nil {
+		return err
+	}
+
+	if c.Name == "" {
+		return fmt.Errorf("missing or empty user name")
+	}
+
+	if c.UID == 0 {
+		return fmt.Errorf("missing or zero uid")
+	}
+
+	*pc = GenerationConfigUser(c)
+	return nil
+}
+
+func (pc *GenerationConfigGroup) UnmarshalYAML(value *yaml.Node) error {
+	type GenerationConfigGroup2 GenerationConfigGroup
+	c := GenerationConfigGroup2(*pc)
+
+	if err := value.Decode(&c); err != nil {
+		return err
+	}
+
+	if c.Name == "" {
+		return fmt.Errorf("missing or empty group name")
+	}
+
+	if c.GID == 0 {
+		return fmt.Errorf("missing or zero gid")
+	}
+
+	*pc = GenerationConfigGroup(c)
+	return nil
+}
+
 func (c *GenerationConfig) LoadFile(filePath string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
