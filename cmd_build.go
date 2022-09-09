@@ -248,7 +248,7 @@ func createArchive(config *GenerationConfig, dirPath string, manifest *Manifest,
 		}
 	}
 
-	relPaths = make([]string, 0, len(manifest.Files))
+	relPaths = make([]string, 0, len(manifest.Directories))
 	for relPath := range manifest.Directories {
 		relPaths = append(relPaths, relPath)
 	}
