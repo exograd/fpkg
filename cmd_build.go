@@ -87,7 +87,14 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 	m.Desc = config.LongDescription
 	m.WWW = config.WebsiteURI
 	m.Maintainer = config.Maintainer
-	m.Arch = config.Architecture
+
+	if arch := config.Architecture; arch != "" {
+		m.Arch = config.Architecture
+	} else {
+		// "pkg add" will segfault if there is no arch field. See
+		// https://github.com/freebsd/pkg/issues/2070.
+		m.Arch = "*"
+	}
 
 	if longDesc := config.LongDescription; longDesc != "" {
 		m.Desc = longDesc

@@ -35,7 +35,7 @@ type Manifest struct {
 	Origin      string              `json:"origin"`
 	WWW         string              `json:"www,omitempty"`
 	Maintainer  string              `json:"maintainer,omitempty"`
-	Arch        string              `json:"arch,omitempty"`
+	Arch        string              `json:"arch"`
 	Deps        ManifestDeps        `json:"deps,omitempty"`
 	Users       []string            `json:"users,omitempty"`
 	Groups      []string            `json:"groups,omitempty"`
