@@ -129,11 +129,6 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 
 	m.Prefix = "/"
 
-	fileCfgs := make(map[string]GenerationConfigFile)
-	for _, fileCfg := range config.Files {
-		fileCfgs[fileCfg.Path] = fileCfg
-	}
-
 	err := WalkDir(dirPath, func(relPath string, info fs.FileInfo) error {
 		fullPath := path.Join(dirPath, relPath)
 
@@ -147,7 +142,7 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 				fullPath, err)
 		}
 
-		fileCfg, hasFileCfg := fileCfgs[relPath]
+		fileCfg, hasFileCfg := config.FindFile(relPath)
 
 		var permString string
 		if hasFileCfg && fileCfg.Mode != "" {

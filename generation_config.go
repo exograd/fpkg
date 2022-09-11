@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"regexp"
 
 	"gopkg.in/yaml.v3"
 )
@@ -56,10 +57,12 @@ type GenerationConfigGroup struct {
 }
 
 type GenerationConfigFile struct {
-	Path  string `yaml:"path"`
-	Mode  string `yaml:"mode,omitempty"`
-	Owner string `yaml:"owner,omitempty"`
-	Group string `yaml:"group,omitempty"`
+	Path             string `yaml:"path,omitempty"`
+	PathRegexpString string `yaml:"path_regexp,omitempty"`
+	PathRegexp       *regexp.Regexp
+	Mode             string `yaml:"mode,omitempty"`
+	Owner            string `yaml:"owner,omitempty"`
+	Group            string `yaml:"group,omitempty"`
 }
 
 func DefaultGenerationConfig() *GenerationConfig {
@@ -149,8 +152,21 @@ func (pc *GenerationConfigFile) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 
-	if c.Path == "" {
-		return fmt.Errorf("missing or empty file path")
+	if c.Path == "" && c.PathRegexpString == "" {
+		return fmt.Errorf("missing or empty file path or file path regexp")
+	}
+
+	if c.Path != "" && c.PathRegexpString != "" {
+		return fmt.Errorf("cannot set both file path and file path regexp")
+	}
+
+	if s := c.PathRegexpString; s != "" {
+		re, err := regexp.Compile(s)
+		if err != nil {
+			return fmt.Errorf("invalid regexp %q: %w", s, err)
+		}
+
+		c.PathRegexp = re
 	}
 
 	*pc = GenerationConfigFile(c)
@@ -170,4 +186,22 @@ func (c *GenerationConfig) LoadFile(filePath string) error {
 	}
 
 	return nil
+}
+
+func (c *GenerationConfig) FindFile(filePath string) (GenerationConfigFile, bool) {
+	for _, file := range c.Files {
+		switch {
+		case file.Path != "":
+			if file.Path == filePath {
+				return file, true
+			}
+
+		case file.PathRegexp != nil:
+			if file.PathRegexp.MatchString(filePath) {
+				return file, true
+			}
+		}
+	}
+
+	return GenerationConfigFile{}, false
 }

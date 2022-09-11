@@ -27,6 +27,9 @@ file_group: "wheel"
 files:
   - path: "/var/lib/example"
     mode: "600"
+  - path_regexp: "/var/www/example/.*"
+    owner: "www"
+    group: "www"
 ```
 
 You can then run fpkg:
