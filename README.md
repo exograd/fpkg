@@ -12,6 +12,12 @@ things:
 - It is not packaged out of FreeBSD, making it annoying to cross-build FreeBSD
   packages. Building it manually requires multiple dependencies.
 
+## Installation
+Fpkg is available for Linux/amd64 as a single binary file. You can [download
+it](https://github.com/exograd/fpkg/releases/latest/download/fpkg) directly
+from the latest GitHub release. You also build it yourself by running `make
+build`. Fpkg should run on all platforms supported by the Go compiler.
+
 ## Package building
 Fpkg uses a simple YAML configuration file describing the package to build.
 
