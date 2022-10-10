@@ -63,7 +63,7 @@ func cmdBuild(p *program.Program) {
 	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	archive, err := os.OpenFile(archivePath, flags, 0644)
 	if err != nil {
-		p.Fatal("cannot open %q: %v", archive, err)
+		p.Fatal("cannot open %q: %v", archivePath, err)
 	}
 
 	if err := createArchive(config, dirPath, manifest, archive); err != nil {
