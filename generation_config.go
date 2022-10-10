@@ -38,6 +38,7 @@ type GenerationConfig struct {
 	FileOwner        string                       `yaml:"file_owner,omitempty"`
 	FileGroup        string                       `yaml:"file_group,omitempty"`
 	Files            []GenerationConfigFile       `yaml:"files,omitempty"`
+	Directories      []GenerationConfigDirectory  `yaml:"directories,omitempty"`
 }
 
 type GenerationConfigDependency struct {
@@ -63,6 +64,13 @@ type GenerationConfigFile struct {
 	Mode             string `yaml:"mode,omitempty"`
 	Owner            string `yaml:"owner,omitempty"`
 	Group            string `yaml:"group,omitempty"`
+}
+
+type GenerationConfigDirectory struct {
+	Path  string `yaml:"path,omitempty"`
+	Mode  string `yaml:"mode,omitempty"`
+	Owner string `yaml:"owner,omitempty"`
+	Group string `yaml:"group,omitempty"`
 }
 
 func DefaultGenerationConfig() *GenerationConfig {

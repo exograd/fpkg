@@ -36,6 +36,10 @@ files:
   - path_regexp: "/var/www/example/.*"
     owner: "www"
     group: "www"
+directories:
+  - path: "/var/www/example"
+    owner: "www"
+    group: "www"
 ```
 
 You can then run fpkg:

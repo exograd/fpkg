@@ -129,6 +129,30 @@ func generateManifest(config *GenerationConfig, dirPath string) (*Manifest, erro
 
 	m.Prefix = "/"
 
+	for _, dir := range config.Directories {
+		var mdir ManifestDirectory
+
+		if dir.Owner != "" {
+			mdir.Uname = dir.Owner
+		} else {
+			mdir.Uname = config.FileOwner
+		}
+
+		if dir.Group != "" {
+			mdir.Gname = dir.Group
+		} else {
+			mdir.Gname = config.FileGroup
+		}
+
+		if dir.Mode != "" {
+			mdir.Perm = dir.Mode
+		} else {
+			mdir.Perm = "755"
+		}
+
+		m.Directories[dir.Path] = mdir
+	}
+
 	err := WalkDir(dirPath, func(relPath string, info fs.FileInfo) error {
 		fullPath := path.Join(dirPath, relPath)
 
